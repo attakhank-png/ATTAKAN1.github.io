@@ -1,0 +1,1100 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="theme-color" content="#059669">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="แปลงโพย">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="description" content="แปลงโพยตัวเลขหวยจากรูปภาพ ส่ง LINE ได้ทันที">
+    <link rel="manifest" href="manifest.webmanifest">
+    <link rel="apple-touch-icon" href="icon-192.png">
+    <title>แปลงโพยตัวเลข</title>
+    <style>
+        :root {
+            --safe-top: env(safe-area-inset-top, 0px);
+            --safe-bottom: env(safe-area-inset-bottom, 0px);
+            --primary: #059669;
+            --primary-dark: #047857;
+        }
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            -webkit-tap-highlight-color: transparent;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        }
+        html, body {
+            height: 100%;
+            overscroll-behavior: none;
+        }
+        body {
+            background-color: #f3f4f6;
+            color: #1f2937;
+            min-height: 100vh;
+            min-height: 100dvh;
+            display: flex;
+            flex-direction: column;
+            padding-top: var(--safe-top);
+            padding-bottom: var(--safe-bottom);
+        }
+        header {
+            background-color: var(--primary);
+            color: #ffffff;
+            padding: 14px 16px 16px;
+            text-align: center;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.12);
+            position: sticky;
+            top: 0;
+            z-index: 20;
+        }
+        header h1 {
+            font-size: 18px;
+            font-weight: 700;
+            letter-spacing: -0.3px;
+        }
+        header p {
+            font-size: 12px;
+            color: #d1fae5;
+            margin-top: 3px;
+            opacity: 0.95;
+        }
+        main {
+            flex: 1;
+            padding: 14px 14px 28px;
+            max-width: 480px;
+            margin: 0 auto;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        .card {
+            background: #ffffff;
+            padding: 14px;
+            border-radius: 16px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+            border: 1px solid #e5e7eb;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 8px;
+        }
+        .card-title {
+            font-size: 14px;
+            font-weight: 700;
+            color: #374151;
+        }
+        .hint {
+            font-size: 12px;
+            color: #6b7280;
+            line-height: 1.45;
+        }
+        .upload-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+        .upload-box {
+            border: 2px dashed #6ee7b7;
+            background-color: #ecfdf5;
+            border-radius: 14px;
+            padding: 18px 8px;
+            text-align: center;
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            color: #065f46;
+            font-weight: 600;
+            font-size: 13px;
+            transition: background 0.15s;
+            user-select: none;
+        }
+        .upload-box:active {
+            background-color: #d1fae5;
+        }
+        .upload-box span.icon {
+            font-size: 28px;
+            line-height: 1;
+        }
+        #previewBox {
+            display: none;
+            text-align: center;
+            margin-top: 2px;
+        }
+        #previewImg {
+            max-height: 180px;
+            max-width: 100%;
+            border-radius: 12px;
+            border: 1px solid #d1d5db;
+            object-fit: contain;
+            background: #f9fafb;
+        }
+        #statusBar {
+            display: none;
+            background: #fef3c7;
+            color: #92400e;
+            padding: 10px 12px;
+            border-radius: 12px;
+            font-size: 13px;
+            text-align: center;
+            font-weight: 500;
+            line-height: 1.4;
+        }
+        #statusBar.success {
+            background: #d1fae5;
+            color: #065f46;
+        }
+        #statusBar.error {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+        textarea {
+            width: 100%;
+            padding: 12px;
+            background-color: #f9fafb;
+            border: 1px solid #d1d5db;
+            border-radius: 12px;
+            font-size: 15px;
+            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+            color: #111827;
+            resize: vertical;
+            min-height: 72px;
+        }
+        textarea:focus {
+            outline: none;
+            border-color: var(--primary);
+            background-color: #ffffff;
+            box-shadow: 0 0 0 3px rgba(5, 150, 105, 0.15);
+        }
+        .row-inputs {
+            display: flex;
+            gap: 10px;
+        }
+        .input-group {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+        .input-group label {
+            font-size: 12px;
+            font-weight: 600;
+            color: #4b5563;
+        }
+        .input-group input {
+            width: 100%;
+            padding: 11px 12px;
+            border: 1px solid #d1d5db;
+            border-radius: 10px;
+            font-size: 15px;
+            background: #f9fafb;
+            -webkit-appearance: none;
+        }
+        .input-group input:focus {
+            outline: none;
+            border-color: var(--primary);
+            background: #fff;
+        }
+        .btn {
+            border: none;
+            border-radius: 12px;
+            padding: 13px 16px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            text-align: center;
+            user-select: none;
+            transition: opacity 0.15s, transform 0.1s;
+        }
+        .btn:active {
+            opacity: 0.88;
+            transform: scale(0.985);
+        }
+        .btn-primary {
+            background-color: var(--primary);
+            color: #ffffff;
+            width: 100%;
+        }
+        .btn-scan {
+            background-color: #2563eb;
+            color: #ffffff;
+            width: 100%;
+            margin-top: 8px;
+        }
+        .btn-dark {
+            background-color: #1f2937;
+            color: #ffffff;
+            flex: 1;
+        }
+        .btn-line {
+            background-color: #06c755;
+            color: #ffffff;
+            flex: 1;
+        }
+        .btn-sm {
+            background-color: #f3f4f6;
+            color: #374151;
+            padding: 7px 12px;
+            font-size: 12px;
+            border-radius: 8px;
+            border: 1px solid #e5e7eb;
+            white-space: nowrap;
+        }
+        .btn-sm.danger {
+            background: #fef2f2;
+            color: #b91c1c;
+            border-color: #fecaca;
+        }
+        .btn-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 4px;
+        }
+        .toast {
+            position: fixed;
+            bottom: calc(24px + var(--safe-bottom));
+            left: 50%;
+            transform: translateX(-50%) translateY(20px);
+            background: #111827;
+            color: #ffffff;
+            padding: 11px 22px;
+            border-radius: 999px;
+            font-size: 13px;
+            font-weight: 500;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.25s, transform 0.25s;
+            z-index: 50;
+            max-width: 90%;
+            text-align: center;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.25);
+        }
+        .toast.show {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+        }
+        .install-banner {
+            display: none;
+            background: linear-gradient(135deg, #059669, #047857);
+            color: white;
+            padding: 12px 14px;
+            border-radius: 14px;
+            font-size: 13px;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            box-shadow: 0 2px 8px rgba(5,150,105,0.3);
+        }
+        .install-banner.show {
+            display: flex;
+        }
+        .install-banner button {
+            background: white;
+            color: #047857;
+            border: none;
+            padding: 8px 14px;
+            border-radius: 10px;
+            font-weight: 700;
+            font-size: 13px;
+            white-space: nowrap;
+        }
+        .badge-count {
+            display: inline-block;
+            background: #d1fae5;
+            color: #065f46;
+            font-size: 11px;
+            font-weight: 700;
+            padding: 2px 8px;
+            border-radius: 999px;
+            margin-left: 6px;
+        }
+        /* History styles */
+        .history-item {
+            background: #f9fafb;
+            border: 1px solid #e5e7eb;
+            border-radius: 12px;
+            padding: 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .history-item .meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 12px;
+            color: #6b7280;
+        }
+        .history-item .preview {
+            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+            font-size: 13px;
+            color: #111827;
+            white-space: pre-wrap;
+            max-height: 60px;
+            overflow: hidden;
+            line-height: 1.35;
+        }
+        .history-item .actions {
+            display: flex;
+            gap: 8px;
+        }
+        .history-item .actions button {
+            flex: 1;
+            padding: 8px;
+            font-size: 12px;
+            border-radius: 8px;
+            border: 1px solid #e5e7eb;
+            background: #fff;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        .history-item .actions button.copy-btn {
+            color: #065f46;
+            border-color: #a7f3d0;
+            background: #ecfdf5;
+        }
+        .history-item .actions button.del-btn {
+            color: #b91c1c;
+            border-color: #fecaca;
+            background: #fef2f2;
+        }
+        .history-empty {
+            text-align: center;
+            color: #9ca3af;
+            font-size: 13px;
+            padding: 16px 8px;
+        }
+        .btn-save {
+            background: #0d9488;
+            color: #fff;
+            width: 100%;
+            margin-top: 4px;
+        }
+        #historyList {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            max-height: 420px;
+            overflow-y: auto;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>แปลงโพยตัวเลข</h1>
+        <p>ถ่ายรูป · อัปโหลด · พิมพ์วาง · ส่ง LINE</p>
+        <div id="netStatus" style="margin-top:6px;font-size:11px;opacity:0.9;"></div>
+    </header>
+
+    <main>
+        <!-- แนะนำติดตั้งแอป -->
+        <div id="installBanner" class="install-banner">
+            <span>📲 เพิ่มไปที่หน้าจอโฮมเพื่อใช้เหมือนแอป</span>
+            <button onclick="promptInstall()">ติดตั้ง</button>
+        </div>
+
+        <!-- ส่วนที่ 1: ถ่ายรูปหรืออัปโหลดภาพ -->
+        <div class="card">
+            <div class="card-header">
+                <span class="card-title">1. เลือกรูปหรือถ่ายภาพโพย</span>
+                <button class="btn-sm" onclick="clearAll()">ล้างทั้งหมด</button>
+            </div>
+            
+            <input type="file" id="cameraInput" accept="image/*" capture="environment" style="display:none;">
+            <input type="file" id="galleryInput" accept="image/*" style="display:none;">
+
+            <div class="upload-grid">
+                <div class="upload-box" onclick="document.getElementById('cameraInput').click()">
+                    <span class="icon">📷</span>
+                    <span>ถ่ายรูปจากกล้อง</span>
+                </div>
+                <div class="upload-box" onclick="document.getElementById('galleryInput').click()">
+                    <span class="icon">🖼️</span>
+                    <span>เลือกจากอัลบั้ม</span>
+                </div>
+            </div>
+
+            <div id="previewBox">
+                <img id="previewImg" alt="ตัวอย่างรูปภาพ">
+                <button class="btn btn-scan" id="scanBtn" onclick="processImage()">🔍 อ่านตัวเลขจากรูปนี้</button>
+            </div>
+
+            <div id="statusBar"></div>
+        </div>
+
+        <!-- ส่วนที่ 2: ตรวจสอบและแก้ไขตัวเลขดิบ -->
+        <div class="card">
+            <div class="card-header">
+                <span class="card-title">2. ตัวเลขที่อ่านได้ (แก้ไขได้)</span>
+            </div>
+            <p class="hint">📌 โหมดออฟไลน์เต็มรูปแบบ: พิมพ์/วางเลข + จัดรูปแบบ + ประวัติ + อ่านรูป ใช้ได้แม้ไม่มีเน็ต<br>
+            (ต้องอัปโหลดไฟล์ tesseract ไปพร้อมกันบนโฮสต์)</p>
+            <textarea id="rawInput" rows="3" placeholder="ตัวเลขจากภาพจะแสดงที่นี่... หรือพิมพ์วางเองได้"></textarea>
+            
+            <div class="row-inputs">
+                <div class="input-group">
+                    <label>ราคาเลข 3 ตัว</label>
+                    <input type="text" id="price3DInput" value="50*50" inputmode="text">
+                </div>
+                <div class="input-group">
+                    <label>ราคาเลข 2 ตัว</label>
+                    <input type="text" id="price2DInput" value="100*100" inputmode="text">
+                </div>
+            </div>
+
+            <button class="btn btn-primary" onclick="formatNumbers()">⚡ จัดรูปแบบเป็นชุดส่ง LINE</button>
+        </div>
+
+        <!-- ผลลัพธ์ 3 ตัว -->
+        <div class="card">
+            <div class="card-header">
+                <span class="card-title">เลข 3 ตัว <span id="count3D" class="badge-count" style="display:none">0</span></span>
+                <button class="btn-sm" onclick="copyText('result3D')">คัดลอก</button>
+            </div>
+            <textarea id="result3D" rows="4" placeholder="ผลลัพธ์เลข 3 ตัว..."></textarea>
+        </div>
+
+        <!-- ผลลัพธ์ 2 ตัว -->
+        <div class="card">
+            <div class="card-header">
+                <span class="card-title">เลข 2 ตัว <span id="count2D" class="badge-count" style="display:none">0</span></span>
+                <button class="btn-sm" onclick="copyText('result2D')">คัดลอก</button>
+            </div>
+            <textarea id="result2D" rows="3" placeholder="ผลลัพธ์เลข 2 ตัว..."></textarea>
+        </div>
+
+        <!-- ปุ่มคัดลอก ส่ง LINE และบันทึก -->
+        <div class="btn-group">
+            <button class="btn btn-dark" onclick="copyAll()">📋 คัดลอกทั้งหมด</button>
+            <button class="btn btn-line" onclick="shareToLine()">💬 ส่งเข้า LINE</button>
+        </div>
+        <button class="btn btn-save" onclick="saveToHistory()">💾 บันทึกโพยนี้ลงประวัติ</button>
+
+        <!-- ประวัติ -->
+        <div class="card">
+            <div class="card-header">
+                <span class="card-title">ประวัติโพย <span id="historyCount" class="badge-count" style="display:none">0</span></span>
+                <button class="btn-sm danger" onclick="clearHistory()" id="clearHistoryBtn" style="display:none">ล้างประวัติ</button>
+            </div>
+            <div id="historyList">
+                <div class="history-empty">ยังไม่มีประวัติ บันทึกโพยหลังจัดรูปแบบได้เลย</div>
+            </div>
+        </div>
+    </main>
+
+    <div id="toast" class="toast">คัดลอกเรียบร้อยแล้ว</div>
+
+    <script>
+        let currentImageData = null;
+        let deferredPrompt = null;
+        let tesseractLoaded = false;
+        const HISTORY_KEY = 'poy_history_v1';
+        const MAX_HISTORY = 30;
+
+        // ---------- Network status ----------
+        function updateNetStatus() {
+            const el = document.getElementById('netStatus');
+            if (!el) return;
+            if (navigator.onLine) {
+                el.textContent = '🟢 ออนไลน์';
+                el.style.color = '#d1fae5';
+            } else {
+                el.textContent = '🔴 ออฟไลน์ · อ่านรูป + พิมพ์เลข + ประวัติ ใช้ได้';
+                el.style.color = '#fef3c7';
+            }
+        }
+        window.addEventListener('online', updateNetStatus);
+        window.addEventListener('offline', updateNetStatus);
+        updateNetStatus();
+
+        // โหลด Tesseract ล่วงหน้าจากไฟล์ในเครื่อง (ออฟไลน์ได้)
+        function preloadTesseract() {
+            if (tesseractLoaded || window.Tesseract) return;
+            const script = document.createElement('script');
+            script.src = './tesseract/tesseract.min.js';
+            script.onload = () => { tesseractLoaded = true; };
+            script.onerror = () => {
+                // ถ้าไม่มีไฟล์ local ลอง CDN ถ้ามีเน็ต
+                if (navigator.onLine) {
+                    const s2 = document.createElement('script');
+                    s2.src = 'https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js';
+                    s2.onload = () => { tesseractLoaded = true; };
+                    document.head.appendChild(s2);
+                }
+            };
+            document.head.appendChild(script);
+        }
+        setTimeout(preloadTesseract, 400);
+
+        // ---------- History ----------
+        function getHistory() {
+            try {
+                return JSON.parse(localStorage.getItem(HISTORY_KEY) || '[]');
+            } catch {
+                return [];
+            }
+        }
+
+        function setHistory(list) {
+            localStorage.setItem(HISTORY_KEY, JSON.stringify(list));
+        }
+
+        function saveToHistory() {
+            const t3 = document.getElementById('result3D').value.trim();
+            const t2 = document.getElementById('result2D').value.trim();
+            if (!t3 && !t2) {
+                showToast('ยังไม่มีผลลัพธ์ให้บันทึก กรุณาจัดรูปแบบก่อน');
+                return;
+            }
+
+            const item = {
+                id: Date.now(),
+                time: new Date().toISOString(),
+                result3D: t3,
+                result2D: t2,
+                raw: document.getElementById('rawInput').value.trim().slice(0, 200),
+                price3: document.getElementById('price3DInput').value.trim(),
+                price2: document.getElementById('price2DInput').value.trim()
+            };
+
+            let list = getHistory();
+            // ไม่บันทึกซ้ำถ้าเนื้อหาเหมือนรายการล่าสุด
+            if (list.length && list[0].result3D === item.result3D && list[0].result2D === item.result2D) {
+                showToast('โพยนี้ถูกบันทึกไปแล้ว');
+                return;
+            }
+
+            list.unshift(item);
+            if (list.length > MAX_HISTORY) list = list.slice(0, MAX_HISTORY);
+            setHistory(list);
+            renderHistory();
+            showToast('บันทึกโพยลงประวัติแล้ว');
+        }
+
+        function deleteHistoryItem(id) {
+            let list = getHistory().filter(x => x.id !== id);
+            setHistory(list);
+            renderHistory();
+            showToast('ลบรายการแล้ว');
+        }
+
+        function loadHistoryItem(id) {
+            const item = getHistory().find(x => x.id === id);
+            if (!item) return;
+            document.getElementById('result3D').value = item.result3D || '';
+            document.getElementById('result2D').value = item.result2D || '';
+            if (item.price3) document.getElementById('price3DInput').value = item.price3;
+            if (item.price2) document.getElementById('price2DInput').value = item.price2;
+            if (item.raw) document.getElementById('rawInput').value = item.raw;
+
+            // อัปเดต count badge
+            updateCountBadges(item.result3D, item.result2D);
+            showToast('โหลดโพยจากประวัติแล้ว');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function copyHistoryItem(id) {
+            const item = getHistory().find(x => x.id === id);
+            if (!item) return;
+            let text = '';
+            if (item.result3D && item.result2D) text = item.result3D + '\n\n' + item.result2D;
+            else text = item.result3D || item.result2D;
+            copyToClipboard(text);
+        }
+
+        function clearHistory() {
+            if (!confirm('ต้องการลบประวัติทั้งหมดใช่ไหม?')) return;
+            setHistory([]);
+            renderHistory();
+            showToast('ล้างประวัติทั้งหมดแล้ว');
+        }
+
+        function formatTime(iso) {
+            try {
+                const d = new Date(iso);
+                const day = d.toLocaleDateString('th-TH', { day: 'numeric', month: 'short' });
+                const time = d.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' });
+                return day + ' ' + time;
+            } catch {
+                return '';
+            }
+        }
+
+        function updateCountBadges(t3, t2) {
+            const c3 = document.getElementById('count3D');
+            const c2 = document.getElementById('count2D');
+            const lines3 = (t3 || '').split('\n').filter(l => /^\d{3}$/.test(l.trim())).length;
+            const nums2 = (t2 || '').split(/\s+/).filter(n => /^\d{2}$/.test(n)).length;
+            if (lines3 > 0) {
+                c3.textContent = lines3;
+                c3.style.display = 'inline-block';
+            } else c3.style.display = 'none';
+            if (nums2 > 0) {
+                c2.textContent = nums2;
+                c2.style.display = 'inline-block';
+            } else c2.style.display = 'none';
+        }
+
+        function renderHistory() {
+            const list = getHistory();
+            const container = document.getElementById('historyList');
+            const countBadge = document.getElementById('historyCount');
+            const clearBtn = document.getElementById('clearHistoryBtn');
+
+            if (list.length === 0) {
+                container.innerHTML = '<div class="history-empty">ยังไม่มีประวัติ บันทึกโพยหลังจัดรูปแบบได้เลย</div>';
+                countBadge.style.display = 'none';
+                clearBtn.style.display = 'none';
+                return;
+            }
+
+            countBadge.textContent = list.length;
+            countBadge.style.display = 'inline-block';
+            clearBtn.style.display = 'inline-block';
+
+            container.innerHTML = list.map(item => {
+                const previewParts = [];
+                if (item.result3D) {
+                    const nums = item.result3D.split('\n').filter(l => /^\d{3}$/.test(l.trim()));
+                    previewParts.push(nums.slice(0, 6).join(' ') + (nums.length > 6 ? '…' : ''));
+                }
+                if (item.result2D) {
+                    const line = item.result2D.split('\n')[0] || '';
+                    previewParts.push(line.slice(0, 40) + (line.length > 40 ? '…' : ''));
+                }
+                const preview = previewParts.join('\n') || '(ว่าง)';
+
+                return `
+                <div class="history-item">
+                    <div class="meta">
+                        <span>${formatTime(item.time)}</span>
+                        <span>${item.result3D ? '3ตัว' : ''}${item.result3D && item.result2D ? ' + ' : ''}${item.result2D ? '2ตัว' : ''}</span>
+                    </div>
+                    <div class="preview">${escapeHtml(preview)}</div>
+                    <div class="actions">
+                        <button class="copy-btn" onclick="copyHistoryItem(${item.id})">คัดลอก</button>
+                        <button onclick="loadHistoryItem(${item.id})">โหลด</button>
+                        <button class="del-btn" onclick="deleteHistoryItem(${item.id})">ลบ</button>
+                    </div>
+                </div>`;
+            }).join('');
+        }
+
+        function escapeHtml(str) {
+            return String(str)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;');
+        }
+
+        // ---------- PWA install ----------
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+            document.getElementById('installBanner').classList.add('show');
+        });
+
+        function promptInstall() {
+            if (!deferredPrompt) {
+                showToast('บน iPhone: กด Share → เพิ่มไปที่หน้าจอโฮม');
+                return;
+            }
+            deferredPrompt.prompt();
+            deferredPrompt.userChoice.then(() => {
+                deferredPrompt = null;
+                document.getElementById('installBanner').classList.remove('show');
+            });
+        }
+
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('sw.js').catch(() => {});
+        }
+
+        document.getElementById('cameraInput').addEventListener('change', handleFileSelect);
+        document.getElementById('galleryInput').addEventListener('change', handleFileSelect);
+
+        function handleFileSelect(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                currentImageData = e.target.result;
+                document.getElementById('previewImg').src = currentImageData;
+                document.getElementById('previewBox').style.display = 'block';
+                showToast('เลือกรูปแล้ว กดปุ่มอ่านตัวเลขได้เลย');
+            };
+            reader.readAsDataURL(file);
+            event.target.value = '';
+        }
+
+        function loadTesseractScript() {
+            return new Promise((resolve, reject) => {
+                if (window.Tesseract) {
+                    tesseractLoaded = true;
+                    resolve(window.Tesseract);
+                    return;
+                }
+                // โหลดจากไฟล์ในเครื่องก่อน (รองรับออฟไลน์เต็มรูปแบบ)
+                const localSrc = './tesseract/tesseract.min.js';
+                const cdnSrc = 'https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js';
+
+                function tryLoad(src) {
+                    return new Promise((res, rej) => {
+                        const script = document.createElement('script');
+                        script.src = src;
+                        script.onload = () => {
+                            tesseractLoaded = true;
+                            res(window.Tesseract);
+                        };
+                        script.onerror = () => rej(new Error('load-fail'));
+                        document.head.appendChild(script);
+                    });
+                }
+
+                tryLoad(localSrc)
+                    .then(resolve)
+                    .catch(() => {
+                        if (!navigator.onLine) {
+                            reject(new Error('offline'));
+                            return;
+                        }
+                        tryLoad(cdnSrc).then(resolve).catch(reject);
+                    });
+            });
+        }
+
+        // ปรับภาพก่อนส่ง OCR เพื่อให้อ่านลายมือแม่นขึ้น
+        function preprocessImage(dataUrl) {
+            return new Promise((resolve) => {
+                const img = new Image();
+                img.onload = () => {
+                    const maxSide = 1600;
+                    let w = img.width;
+                    let h = img.height;
+                    if (Math.max(w, h) > maxSide) {
+                        const scale = maxSide / Math.max(w, h);
+                        w = Math.round(w * scale);
+                        h = Math.round(h * scale);
+                    }
+                    // ขยายรูปเล็กให้อ่านง่ายขึ้น
+                    if (Math.max(w, h) < 800) {
+                        const scale = 800 / Math.max(w, h);
+                        w = Math.round(w * scale);
+                        h = Math.round(h * scale);
+                    }
+
+                    const canvas = document.createElement('canvas');
+                    canvas.width = w;
+                    canvas.height = h;
+                    const ctx = canvas.getContext('2d');
+                    ctx.fillStyle = '#ffffff';
+                    ctx.fillRect(0, 0, w, h);
+                    ctx.drawImage(img, 0, 0, w, h);
+
+                    const imageData = ctx.getImageData(0, 0, w, h);
+                    const d = imageData.data;
+
+                    // 1) แปลงเป็น grayscale + เพิ่ม contrast
+                    for (let i = 0; i < d.length; i += 4) {
+                        let g = 0.299 * d[i] + 0.587 * d[i+1] + 0.114 * d[i+2];
+                        // contrast
+                        g = (g - 128) * 1.45 + 128;
+                        g = Math.max(0, Math.min(255, g));
+                        d[i] = d[i+1] = d[i+2] = g;
+                    }
+
+                    // 2) คำนวณ threshold แบบง่าย (Otsu-ish จาก histogram)
+                    const hist = new Array(256).fill(0);
+                    for (let i = 0; i < d.length; i += 4) hist[d[i]]++;
+                    let total = (d.length / 4);
+                    let sum = 0;
+                    for (let i = 0; i < 256; i++) sum += i * hist[i];
+                    let sumB = 0, wB = 0, maxVar = 0, threshold = 140;
+                    for (let t = 0; t < 256; t++) {
+                        wB += hist[t];
+                        if (wB === 0) continue;
+                        const wF = total - wB;
+                        if (wF === 0) break;
+                        sumB += t * hist[t];
+                        const mB = sumB / wB;
+                        const mF = (sum - sumB) / wF;
+                        const varBetween = wB * wF * (mB - mF) * (mB - mF);
+                        if (varBetween > maxVar) {
+                            maxVar = varBetween;
+                            threshold = t;
+                        }
+                    }
+
+                    // 3) ทำเป็นขาวดำ
+                    for (let i = 0; i < d.length; i += 4) {
+                        const v = d[i] > threshold ? 255 : 0;
+                        d[i] = d[i+1] = d[i+2] = v;
+                    }
+
+                    ctx.putImageData(imageData, 0, 0);
+                    resolve(canvas.toDataURL('image/png'));
+                };
+                img.onerror = () => resolve(dataUrl); // ถ้าพลาดใช้รูปเดิม
+                img.src = dataUrl;
+            });
+        }
+
+        async function processImage() {
+            if (!currentImageData) {
+                showToast('กรุณาถ่ายรูปหรือเลือกรูปก่อน');
+                return;
+            }
+
+            const statusBar = document.getElementById('statusBar');
+            const scanBtn = document.getElementById('scanBtn');
+            statusBar.style.display = 'block';
+            statusBar.className = '';
+            statusBar.textContent = '⏳ กำลังโหลดระบบอ่านภาพ...';
+            scanBtn.disabled = true;
+            scanBtn.style.opacity = '0.6';
+
+            try {
+                const Tesseract = await loadTesseractScript();
+                statusBar.textContent = '⏳ กำลังปรับภาพให้อ่านง่ายขึ้น...';
+
+                // ปรับภาพก่อน (contrast + ขาวดำ)
+                const processed = await preprocessImage(currentImageData);
+
+                statusBar.textContent = '⏳ กำลังวิเคราะห์ตัวเลขจากรูปภาพ...';
+
+                const base = './tesseract/';
+                const worker = await Tesseract.createWorker('eng', 1, {
+                    workerPath: base + 'worker.min.js',
+                    langPath: base + 'lang',
+                    corePath: base,
+                    logger: m => {
+                        if (m.status === 'recognizing text' && m.progress) {
+                            const pct = Math.round(m.progress * 100);
+                            statusBar.textContent = `⏳ กำลังอ่านภาพ... ${pct}%`;
+                        }
+                    }
+                });
+
+                // พารามิเตอร์ที่เหมาะกับตัวเลขลายมือ / โพย
+                await worker.setParameters({
+                    tessedit_char_whitelist: '0123456789',
+                    tessedit_pageseg_mode: '6',          // Assume uniform block of text
+                    preserve_interword_spaces: '1'
+                });
+
+                // ลองอ่านทั้งรูปที่ปรับแล้ว + รูปต้นฉบับ แล้วเลือกผลที่ดีกว่า
+                const ret1 = await worker.recognize(processed);
+                let text1 = (ret1.data.text || '').trim();
+
+                // ถ้าได้น้อยเกินไป ลองอ่านรูปต้นฉบับด้วย
+                let finalText = text1;
+                const digits1 = (text1.match(/\d/g) || []).length;
+                if (digits1 < 4) {
+                    statusBar.textContent = '⏳ ลองอ่านอีกรอบ...';
+                    const ret2 = await worker.recognize(currentImageData);
+                    const text2 = (ret2.data.text || '').trim();
+                    const digits2 = (text2.match(/\d/g) || []).length;
+                    if (digits2 > digits1) finalText = text2;
+                }
+
+                await worker.terminate();
+
+                // ทำความสะอาดผลลัพธ์: เหลือแต่ตัวเลขและขึ้นบรรทัดใหม่
+                finalText = finalText
+                    .replace(/[^0-9\s\n]/g, ' ')
+                    .replace(/[ \t]+/g, ' ')
+                    .replace(/\n+/g, '\n')
+                    .trim();
+
+                if (finalText) {
+                    document.getElementById('rawInput').value = finalText;
+                    formatNumbers();
+                    statusBar.className = 'success';
+                    statusBar.textContent = '✅ อ่านภาพเสร็จแล้ว! กรุณาตรวจเลขด้านล่างแล้วแก้ถ้าเพี้ยน';
+                } else {
+                    statusBar.className = 'error';
+                    statusBar.textContent = '⚠️ ไม่พบตัวเลขชัดเจน ลองถ่ายใหม่ให้ใกล้และสว่างขึ้น หรือพิมพ์ใส่ช่องด้านล่าง';
+                }
+            } catch (err) {
+                console.error(err);
+                statusBar.className = 'error';
+                if (!navigator.onLine || (err && err.message === 'offline')) {
+                    statusBar.textContent = '🔴 ตอนนี้ออฟไลน์ · อ่านรูปอัตโนมัติไม่ได้ → พิมพ์หรือวางตัวเลขในช่องที่ 2 ได้เลย';
+                } else {
+                    statusBar.textContent = '❌ อ่านภาพไม่สำเร็จ → พิมพ์ตัวเลขในช่องที่ 2 ได้เลย';
+                }
+            } finally {
+                scanBtn.disabled = false;
+                scanBtn.style.opacity = '1';
+            }
+        }
+
+        function showToast(msg) {
+            const toast = document.getElementById('toast');
+            toast.textContent = msg;
+            toast.classList.add('show');
+            setTimeout(() => toast.classList.remove('show'), 2300);
+        }
+
+        function clearAll() {
+            currentImageData = null;
+            document.getElementById('cameraInput').value = '';
+            document.getElementById('galleryInput').value = '';
+            document.getElementById('previewBox').style.display = 'none';
+            document.getElementById('statusBar').style.display = 'none';
+            document.getElementById('rawInput').value = '';
+            document.getElementById('result3D').value = '';
+            document.getElementById('result2D').value = '';
+            document.getElementById('count3D').style.display = 'none';
+            document.getElementById('count2D').style.display = 'none';
+            showToast('ล้างข้อมูลทั้งหมดแล้ว');
+        }
+
+        function formatNumbers() {
+            const raw = document.getElementById('rawInput').value;
+            const p3 = document.getElementById('price3DInput').value.trim().replace(/x/gi, '*') || '50*50';
+            const p2 = document.getElementById('price2DInput').value.trim().replace(/x/gi, '*') || '100*100';
+
+            if (!raw.trim()) {
+                showToast('กรุณาใส่ตัวเลขในช่องที่ 2 ก่อน');
+                return;
+            }
+
+            const tokens = raw.match(/\d+/g) || [];
+            const list3D = [];
+            const list2D = [];
+            const seen3 = new Set();
+            const seen2 = new Set();
+
+            tokens.forEach(num => {
+                if (num.length === 3 && !seen3.has(num)) {
+                    seen3.add(num);
+                    list3D.push(num);
+                } else if (num.length === 2 && !seen2.has(num)) {
+                    seen2.add(num);
+                    list2D.push(num);
+                }
+            });
+
+            const c3 = document.getElementById('count3D');
+            const c2 = document.getElementById('count2D');
+            if (list3D.length) {
+                c3.textContent = list3D.length;
+                c3.style.display = 'inline-block';
+            } else {
+                c3.style.display = 'none';
+            }
+            if (list2D.length) {
+                c2.textContent = list2D.length;
+                c2.style.display = 'inline-block';
+            } else {
+                c2.style.display = 'none';
+            }
+
+            document.getElementById('result3D').value = list3D.length > 0 
+                ? list3D.join('\n') + '\n' + p3 
+                : '';
+
+            document.getElementById('result2D').value = list2D.length > 0 
+                ? list2D.join(' ') + '\n' + p2 
+                : '';
+
+            showToast(`จัดรูปแบบแล้ว · 3ตัว ${list3D.length} ชุด · 2ตัว ${list2D.length} ชุด`);
+        }
+
+        function copyToClipboard(text) {
+            if (!text || !text.trim()) {
+                showToast('ไม่มีข้อความให้คัดลอก');
+                return;
+            }
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(text).then(() => {
+                    showToast('คัดลอกเรียบร้อยแล้ว!');
+                }).catch(() => fallbackCopy(text));
+            } else {
+                fallbackCopy(text);
+            }
+        }
+
+        function fallbackCopy(text) {
+            const temp = document.createElement('textarea');
+            temp.value = text;
+            temp.style.position = 'fixed';
+            temp.style.left = '-9999px';
+            document.body.appendChild(temp);
+            temp.select();
+            try {
+                document.execCommand('copy');
+                showToast('คัดลอกเรียบร้อยแล้ว!');
+            } catch (e) {
+                showToast('คัดลอกไม่สำเร็จ ลองกดค้างเลือกข้อความแทน');
+            }
+            document.body.removeChild(temp);
+        }
+
+        function copyText(elementId) {
+            const val = document.getElementById(elementId).value;
+            copyToClipboard(val);
+        }
+
+        function getCombinedText() {
+            const t3 = document.getElementById('result3D').value.trim();
+            const t2 = document.getElementById('result2D').value.trim();
+            if (t3 && t2) return t3 + '\n\n' + t2;
+            return t3 || t2;
+        }
+
+        function copyAll() {
+            copyToClipboard(getCombinedText());
+        }
+
+        function shareToLine() {
+            const allText = getCombinedText();
+            if (!allText) {
+                showToast('ไม่มีข้อความสำหรับส่ง');
+                return;
+            }
+            copyToClipboard(allText);
+            setTimeout(() => {
+                window.location.href = 'https://line.me/R/msg/text/?' + encodeURIComponent(allText);
+            }, 300);
+        }
+
+        function isIos() {
+            return /iphone|ipad|ipod/.test(window.navigator.userAgent.toLowerCase());
+        }
+        function isInStandalone() {
+            return window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+        }
+        if (isIos() && !isInStandalone()) {
+            setTimeout(() => {
+                const banner = document.getElementById('installBanner');
+                if (banner && !banner.classList.contains('show')) {
+                    banner.querySelector('span').textContent = '📲 กด Share แล้วเลือก "เพิ่มไปที่หน้าจอโฮม"';
+                    banner.querySelector('button').textContent = 'วิธีติดตั้ง';
+                    banner.querySelector('button').onclick = () => {
+                        showToast('กดปุ่ม Share (□↑) ด้านล่าง → เพิ่มไปที่หน้าจอโฮม');
+                    };
+                    banner.classList.add('show');
+                }
+            }, 1500);
+        }
+
+        // โหลดประวัติตอนเปิดแอป
+        renderHistory();
+    </script>
+</body>
+</html>
